@@ -19,9 +19,8 @@ struct SyncState: Codable, Equatable {
     /// EAS folder metadata cached from FolderSync (for UI / re-resolution).
     var folders: [FolderInfo] = []
 
-    /// EAS ServerId -> Apple EKEvent.calendarItemExternalIdentifier (we set it
-    /// to the EAS ServerId, so this map degenerates to a set, but we keep it
-    /// explicit in case we move to ekIdentifier later).
+    /// EAS ServerId -> EventKit calendar item identifier. EventKit owns this
+    /// identifier, so it is persisted after the event is saved.
     var serverIdToEventExternalId: [String: String] = [:]
 
     /// Identifier of the dedicated `EKCalendar` we mirror events into.

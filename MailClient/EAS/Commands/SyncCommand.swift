@@ -118,9 +118,11 @@ enum SyncCommand {
                 guard case .element(let name, _) = child, name.page == .airSync else { continue }
                 switch name.name {
                 case "Add", "Change":
-                    guard let serverId = child.string(.airSync, "ServerId") else { continue }
-                    let appData = child.child(.airSync, "ApplicationData")
-                    let item = appData.map(EASCalendarParser.parse) ?? EASCalendarItem()
+                    guard let serverId = child.string(.airSync, "ServerId"),
+                          let appData = child.child(.airSync, "ApplicationData") else {
+                        continue
+                    }
+                    let item = EASCalendarParser.parse(appData)
                     if name.name == "Add" {
                         changes.append(.add(serverId: serverId, item: item))
                     } else {

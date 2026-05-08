@@ -19,7 +19,7 @@ enum RecurrenceMapper {
                                     end: end)
 
         case 1:
-            let days = mapDayOfWeekBitmask(r.dayOfWeek)
+            let days = mapDayOfWeekBitmask(r.dayOfWeek, weekdaySpecial: false)
             return EKRecurrenceRule(recurrenceWith: .weekly,
                                     interval: interval,
                                     daysOfTheWeek: days.isEmpty ? nil : days,
@@ -43,7 +43,7 @@ enum RecurrenceMapper {
                                     end: end)
 
         case 3:
-            let days = mapDayOfWeekBitmask(r.dayOfWeek)
+            let days = mapDayOfWeekBitmask(r.dayOfWeek, weekdaySpecial: true)
             let week = mapWeekOfMonth(r.weekOfMonth)
             return EKRecurrenceRule(recurrenceWith: .monthly,
                                     interval: interval,
@@ -69,7 +69,7 @@ enum RecurrenceMapper {
                                     end: end)
 
         case 6:
-            let days = mapDayOfWeekBitmask(r.dayOfWeek)
+            let days = mapDayOfWeekBitmask(r.dayOfWeek, weekdaySpecial: true)
             let week = mapWeekOfMonth(r.weekOfMonth)
             let moy = r.monthOfYear.map { [NSNumber(value: $0)] }
             return EKRecurrenceRule(recurrenceWith: .yearly,
@@ -99,8 +99,11 @@ enum RecurrenceMapper {
 
     /// EAS DayOfWeek bitfield: 1=Sun, 2=Mon, 4=Tue, 8=Wed, 16=Thu, 32=Fri, 64=Sat.
     /// 127 with type 3 means "weekday-of-month" - we approximate with M-F.
-    private static func mapDayOfWeekBitmask(_ raw: Int?) -> [EKRecurrenceDayOfWeek] {
+    private static func mapDayOfWeekBitmask(_ raw: Int?, weekdaySpecial: Bool) -> [EKRecurrenceDayOfWeek] {
         guard let value = raw else { return [] }
+        if weekdaySpecial && value == 127 {
+            return [.monday, .tuesday, .wednesday, .thursday, .friday].map(EKRecurrenceDayOfWeek.init)
+        }
         let weekdays: [(Int, EKWeekday)] = [
             (1, .sunday), (2, .monday), (4, .tuesday), (8, .wednesday),
             (16, .thursday), (32, .friday), (64, .saturday)

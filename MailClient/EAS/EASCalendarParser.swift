@@ -10,33 +10,53 @@ enum EASCalendarParser {
         for child in appData.children {
             guard case .element(let name, _) = child else { continue }
             switch (name.page, name.name) {
-            case (.calendar, "Subject"):    item.subject = child.stringValue
-            case (.calendar, "Location"):   item.location = child.stringValue
-            case (.calendar, "OrganizerName"): item.organizerName = child.stringValue
-            case (.calendar, "OrganizerEmail"): item.organizerEmail = child.stringValue
+            case (.calendar, "Subject"):
+                item.markPresent(.subject)
+                item.subject = child.stringValue
+            case (.calendar, "Location"):
+                item.markPresent(.location)
+                item.location = child.stringValue
+            case (.calendar, "OrganizerName"):
+                item.markPresent(.organizerName)
+                item.organizerName = child.stringValue
+            case (.calendar, "OrganizerEmail"):
+                item.markPresent(.organizerEmail)
+                item.organizerEmail = child.stringValue
             case (.calendar, "StartTime"):
+                item.markPresent(.startTime)
                 item.startTime = child.stringValue.flatMap(EASDateFormat.parse)
             case (.calendar, "EndTime"):
+                item.markPresent(.endTime)
                 item.endTime = child.stringValue.flatMap(EASDateFormat.parse)
             case (.calendar, "DtStamp"):
+                item.markPresent(.dtStamp)
                 item.dtStamp = child.stringValue.flatMap(EASDateFormat.parse)
             case (.calendar, "AllDayEvent"):
+                item.markPresent(.allDay)
                 item.allDay = (child.stringValue == "1")
             case (.calendar, "UID"):
+                item.markPresent(.uid)
                 item.uid = child.stringValue
             case (.calendar, "ClientUid"):
+                item.markPresent(.uid)
                 if item.uid == nil { item.uid = child.stringValue }
             case (.calendar, "Reminder"):
+                item.markPresent(.reminder)
                 item.reminderMinutes = Int(child.stringValue ?? "")
             case (.calendar, "Sensitivity"):
+                item.markPresent(.sensitivity)
                 item.sensitivity = Int(child.stringValue ?? "")
             case (.calendar, "BusyStatus"):
+                item.markPresent(.busyStatus)
                 item.busyStatus = Int(child.stringValue ?? "")
             case (.calendar, "MeetingStatus"):
+                item.markPresent(.meetingStatus)
                 item.meetingStatus = Int(child.stringValue ?? "")
             case (.calendar, "ResponseRequested"):
+                item.markPresent(.responseRequested)
                 item.responseRequested = (child.stringValue == "1")
             case (.calendar, "TimeZone"):
+                item.markPresent(.timeZone)
                 if let s = child.stringValue, let raw = Data(base64Encoded: s) {
                     item.timeZoneBlob = raw
                     item.resolvedTimeZone = TimezoneDecoder.decode(raw)
@@ -45,14 +65,19 @@ enum EASCalendarParser {
                     item.resolvedTimeZone = TimezoneDecoder.decode(data)
                 }
             case (.calendar, "Attendees"):
+                item.markPresent(.attendees)
                 item.attendees = parseAttendees(child)
             case (.calendar, "Categories"):
+                item.markPresent(.categories)
                 item.categories = parseCategories(child)
             case (.calendar, "Recurrence"):
+                item.markPresent(.recurrence)
                 item.recurrence = parseRecurrence(child)
             case (.calendar, "Exceptions"):
+                item.markPresent(.exceptions)
                 item.exceptions = parseExceptions(child)
             case (.airSyncBase, "Body"):
+                item.markPresent(.body)
                 if let data = child.child(.airSyncBase, "Data")?.stringValue {
                     item.body = data
                 }
@@ -111,6 +136,12 @@ enum EASCalendarParser {
             out.append(ex)
         }
         return out
+    }
+}
+
+private extension EASCalendarItem {
+    mutating func markPresent(_ field: EASCalendarField) {
+        presentFields.insert(field)
     }
 }
 

@@ -183,16 +183,21 @@ final class CalendarBridge {
         guard !changes.isEmpty else { return }
         let cal = try ensureLocalCalendar()
         var recurrenceExceptions: [(serverId: String, item: EASCalendarItem)] = []
+        var savedEvents: [(serverId: String, event: EKEvent)] = []
 
         for change in changes {
             switch change {
             case .add(let serverId, let item):
-                upsert(serverId: serverId, item: item, calendar: cal)
+                if let event = upsert(serverId: serverId, item: item, calendar: cal) {
+                    savedEvents.append((serverId, event))
+                }
                 if item.hasDeletedRecurrenceExceptions {
                     recurrenceExceptions.append((serverId, item))
                 }
             case .change(let serverId, let item):
-                upsert(serverId: serverId, item: item, calendar: cal)
+                if let event = upsert(serverId: serverId, item: item, calendar: cal) {
+                    savedEvents.append((serverId, event))
+                }
                 if item.hasDeletedRecurrenceExceptions {
                     recurrenceExceptions.append((serverId, item))
                 }
@@ -206,6 +211,8 @@ final class CalendarBridge {
         } catch {
             throw CalendarBridgeError.eventStoreError(error)
         }
+
+        persistEventMappings(savedEvents)
 
         guard !recurrenceExceptions.isEmpty else { return }
         for request in recurrenceExceptions {
@@ -225,19 +232,30 @@ final class CalendarBridge {
 
     // MARK: - Internals
 
-    private func upsert(serverId: String, item: EASCalendarItem, calendar: EKCalendar) {
-        let event = findEvent(serverId: serverId, calendar: calendar) ?? EKEvent(eventStore: store)
+    private func upsert(serverId: String, item: EASCalendarItem, calendar: EKCalendar) -> EKEvent? {
+        let existing = findEvent(serverId: serverId, calendar: calendar)
+        let event = existing ?? EKEvent(eventStore: store)
         if event.calendar == nil { event.calendar = calendar }
-        applyFields(item, to: event)
-        // Persist the EAS link via the public iCal extension property; both
-        // legs (round-trip) and our local lookup rely on it.
-        event.calendarItemExternalIdentifier_setIfPossible(serverId)
+        applyFields(item, to: event, isNew: existing == nil)
 
         do {
             try store.save(event, span: .futureEvents, commit: false)
-            stateStore.mutate { $0.serverIdToEventExternalId[serverId] = event.eventIdentifier ?? serverId }
+            return event
         } catch {
             log.error("Save event failed for \(serverId, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            return nil
+        }
+    }
+
+    private func persistEventMappings(_ savedEvents: [(serverId: String, event: EKEvent)]) {
+        guard !savedEvents.isEmpty else { return }
+        stateStore.mutate { state in
+            for saved in savedEvents {
+                let identifier = saved.event.calendarItemIdentifier
+                if !identifier.isEmpty {
+                    state.serverIdToEventExternalId[saved.serverId] = identifier
+                }
+            }
         }
     }
 
@@ -287,6 +305,12 @@ final class CalendarBridge {
             return
         }
 
+        let delta = abs(occurrence.startDate.timeIntervalSince(start))
+        guard delta <= Self.deletedOccurrenceMatchTolerance(for: occurrence) else {
+            syncLog.warn("Deleted recurrence occurrence ambiguous at \(Self.logDate(start)) for \(master.title ?? "(no subject)"); closest delta \(Int(delta))s.")
+            return
+        }
+
         do {
             try store.remove(occurrence, span: .thisEvent, commit: false)
             syncLog.info("Deleted recurrence occurrence at \(Self.logDate(start)) for \(master.title ?? "(no subject)").")
@@ -296,12 +320,16 @@ final class CalendarBridge {
     }
 
     private func findEvent(serverId: String, calendar: EKCalendar) -> EKEvent? {
-        // First try by stored eventIdentifier.
-        if let storedId = stateStore.snapshot().serverIdToEventExternalId[serverId],
-           let ev = store.event(withIdentifier: storedId) {
-            return ev
+        if let storedId = stateStore.snapshot().serverIdToEventExternalId[serverId] {
+            if let ev = store.event(withIdentifier: storedId), ev.calendar.calendarIdentifier == calendar.calendarIdentifier {
+                return ev
+            }
+            if let ev = store.calendarItem(withIdentifier: storedId) as? EKEvent,
+               ev.calendar.calendarIdentifier == calendar.calendarIdentifier {
+                return ev
+            }
         }
-        // Fall back to scanning the calendar for matching external identifier.
+
         let pred = store.predicateForEvents(
             withStart: Date(timeIntervalSinceNow: -60 * 60 * 24 * 366 * 5),
             end: Date(timeIntervalSinceNow: 60 * 60 * 24 * 366 * 5),
@@ -313,21 +341,31 @@ final class CalendarBridge {
         return nil
     }
 
-    private func applyFields(_ item: EASCalendarItem, to event: EKEvent) {
-        event.title = item.subject ?? "(no subject)"
-        event.location = item.location
-        event.url = nil
-        event.notes = item.body
-        event.isAllDay = item.allDay
+    private func applyFields(_ item: EASCalendarItem, to event: EKEvent, isNew: Bool) {
+        if isNew || item.hasField(.subject) {
+            event.title = item.subject ?? "(no subject)"
+        }
+        if isNew || item.hasField(.location) {
+            event.location = item.location
+        }
+        if isNew || item.hasField(.body) {
+            event.notes = item.body
+        }
+        if isNew || item.hasField(.allDay) {
+            event.isAllDay = item.allDay
+        }
+        if isNew || item.hasField(.location) || (item.hasField(.body) && isBlank(event.location)) {
+            event.url = nil
+        }
         applyMeetingLink(from: item, to: event)
 
-        if item.allDay {
+        if event.isAllDay {
             // EAS all-day events have UTC midnight start/end. EventKit prefers
             // start/end interpreted in the system calendar zone.
             event.timeZone = item.resolvedTimeZone ?? TimeZone.current
-        } else if let tz = item.resolvedTimeZone {
+        } else if item.hasField(.timeZone), let tz = item.resolvedTimeZone {
             event.timeZone = tz
-        } else {
+        } else if isNew {
             event.timeZone = TimeZone(identifier: "UTC")
         }
 
@@ -339,7 +377,9 @@ final class CalendarBridge {
 
         applyAlarm(reminderMinutes(for: item), to: event)
         applyAttendeesAsNotes(item, to: event)
-        applyRecurrence(item.recurrence, to: event)
+        if isNew || item.hasField(.recurrence) {
+            applyRecurrence(item.recurrence, to: event)
+        }
     }
 
     private func reminderMinutes(for item: EASCalendarItem) -> Int? {
@@ -410,25 +450,24 @@ final class CalendarBridge {
     private static func logDate(_ date: Date) -> String {
         ISO8601DateFormatter().string(from: date)
     }
+
+    private static func deletedOccurrenceMatchTolerance(for occurrence: EKEvent) -> TimeInterval {
+        if occurrence.isAllDay { return 60 * 60 * 24 }
+        let duration = max(occurrence.endDate.timeIntervalSince(occurrence.startDate), 60 * 15)
+        return min(max(duration, 60 * 60), 60 * 60 * 12)
+    }
 }
 
 private extension EASCalendarItem {
     var hasDeletedRecurrenceExceptions: Bool {
         exceptions.contains { $0.deleted && $0.startTime != nil }
     }
-}
 
-// MARK: - External identifier helper
+    func hasField(_ field: EASCalendarField) -> Bool {
+        presentFields.contains(field)
+    }
 
-private extension EKEvent {
-    /// `calendarItemExternalIdentifier` is read-only on EKCalendarItem. For
-    /// app-created events EventKit derives it from the iCal `UID` of the event.
-    /// We piggy-back on that: setting `event.url`/UID-like fields is not
-    /// supported, but we can stash the EAS ServerId in `notes` as a fallback
-    /// and keep the authoritative mapping in our own store.
-    func calendarItemExternalIdentifier_setIfPossible(_ serverId: String) {
-        // No-op: we maintain the mapping in `SyncStateStore`. The method is
-        // kept as a hook in case Apple opens the API.
-        _ = serverId
+    func hasAnyField(_ fields: Set<EASCalendarField>) -> Bool {
+        !presentFields.isDisjoint(with: fields)
     }
 }

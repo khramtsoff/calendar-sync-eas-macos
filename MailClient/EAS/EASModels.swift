@@ -114,6 +114,7 @@ struct EASSyncResult {
 
 /// Mid-fidelity calendar item parsed from EAS WBXML.
 struct EASCalendarItem: Equatable {
+    var presentFields: Set<EASCalendarField> = []
     var subject: String?
     var location: String?
     var body: String?
@@ -135,6 +136,29 @@ struct EASCalendarItem: Equatable {
     var categories: [String] = []
     var recurrence: EASRecurrence?
     var exceptions: [EASException] = []
+}
+
+enum EASCalendarField: String, Equatable, Hashable {
+    case subject
+    case location
+    case body
+    case organizerName
+    case organizerEmail
+    case startTime
+    case endTime
+    case allDay
+    case dtStamp
+    case uid
+    case timeZone
+    case reminder
+    case sensitivity
+    case busyStatus
+    case meetingStatus
+    case responseRequested
+    case attendees
+    case categories
+    case recurrence
+    case exceptions
 }
 
 struct EASAttendee: Equatable {
