@@ -26,6 +26,7 @@ final class CalendarBridge {
 
     let store: EKEventStore
     private let log = Logger(subsystem: "com.mailclient.MailClient", category: "CalendarBridge")
+    private let syncLog = SyncLog.shared
     private let stateStore: SyncStateStore
     private let settings: AppSettings
 
@@ -181,16 +182,38 @@ final class CalendarBridge {
     func apply(_ changes: [EASChange]) throws {
         guard !changes.isEmpty else { return }
         let cal = try ensureLocalCalendar()
+        var recurrenceExceptions: [(serverId: String, item: EASCalendarItem)] = []
 
         for change in changes {
             switch change {
             case .add(let serverId, let item):
                 upsert(serverId: serverId, item: item, calendar: cal)
+                if item.hasDeletedRecurrenceExceptions {
+                    recurrenceExceptions.append((serverId, item))
+                }
             case .change(let serverId, let item):
                 upsert(serverId: serverId, item: item, calendar: cal)
+                if item.hasDeletedRecurrenceExceptions {
+                    recurrenceExceptions.append((serverId, item))
+                }
             case .delete(let serverId):
                 deleteEvent(serverId: serverId, calendar: cal)
             }
+        }
+
+        do {
+            try store.commit()
+        } catch {
+            throw CalendarBridgeError.eventStoreError(error)
+        }
+
+        guard !recurrenceExceptions.isEmpty else { return }
+        for request in recurrenceExceptions {
+            applyDeletedRecurrenceExceptions(
+                serverId: request.serverId,
+                item: request.item,
+                calendar: cal
+            )
         }
 
         do {
@@ -227,6 +250,49 @@ final class CalendarBridge {
             }
         }
         stateStore.mutate { $0.serverIdToEventExternalId.removeValue(forKey: serverId) }
+    }
+
+    private func applyDeletedRecurrenceExceptions(serverId: String, item: EASCalendarItem, calendar: EKCalendar) {
+        guard let master = findEvent(serverId: serverId, calendar: calendar) else {
+            syncLog.warn("Recurrence exception skipped: master event not found for \(serverId).")
+            return
+        }
+
+        let deletedStarts = item.exceptions.compactMap { ex -> Date? in
+            ex.deleted ? ex.startTime : nil
+        }
+        guard !deletedStarts.isEmpty else { return }
+
+        syncLog.info("Applying \(deletedStarts.count) deleted recurrence exception(s) for \(item.subject ?? serverId).")
+        for start in deletedStarts {
+            deleteOccurrence(startingAt: start, matching: master, calendar: calendar)
+        }
+    }
+
+    private func deleteOccurrence(startingAt start: Date, matching master: EKEvent, calendar: EKCalendar) {
+        let predicate = store.predicateForEvents(
+            withStart: start.addingTimeInterval(-60 * 60 * 12),
+            end: start.addingTimeInterval(60 * 60 * 36),
+            calendars: [calendar]
+        )
+        let candidates = store.events(matching: predicate)
+            .filter { candidate in
+                candidate.calendarItemIdentifier == master.calendarItemIdentifier
+            }
+
+        guard let occurrence = candidates.min(by: {
+            abs($0.startDate.timeIntervalSince(start)) < abs($1.startDate.timeIntervalSince(start))
+        }) else {
+            syncLog.warn("Deleted recurrence occurrence not found at \(Self.logDate(start)) for \(master.title ?? "(no subject)").")
+            return
+        }
+
+        do {
+            try store.remove(occurrence, span: .thisEvent, commit: false)
+            syncLog.info("Deleted recurrence occurrence at \(Self.logDate(start)) for \(master.title ?? "(no subject)").")
+        } catch {
+            syncLog.error("Delete recurrence occurrence failed at \(Self.logDate(start)): \(error.localizedDescription)")
+        }
     }
 
     private func findEvent(serverId: String, calendar: EKCalendar) -> EKEvent? {
@@ -339,6 +405,16 @@ final class CalendarBridge {
         event.recurrenceRules = nil
         guard let r = rec, let rule = RecurrenceMapper.map(r) else { return }
         event.addRecurrenceRule(rule)
+    }
+
+    private static func logDate(_ date: Date) -> String {
+        ISO8601DateFormatter().string(from: date)
+    }
+}
+
+private extension EASCalendarItem {
+    var hasDeletedRecurrenceExceptions: Bool {
+        exceptions.contains { $0.deleted && $0.startTime != nil }
     }
 }
 
