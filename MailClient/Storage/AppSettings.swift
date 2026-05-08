@@ -93,6 +93,12 @@ final class AppSettings: ObservableObject {
         didSet { defaults.set(forcedReminderMinutes, forKey: Keys.forcedReminderMinutes) }
     }
 
+    /// When enabled, meeting links found in the event body are copied into
+    /// empty local location / URL fields.
+    @Published var extractMeetingLinksEnabled: Bool {
+        didSet { defaults.set(extractMeetingLinksEnabled, forKey: Keys.extractMeetingLinksEnabled) }
+    }
+
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         self.host = defaults.string(forKey: Keys.host) ?? ""
@@ -128,6 +134,7 @@ final class AppSettings: ObservableObject {
         self.pinnedProtocolVersion = defaults.string(forKey: Keys.pinnedVersion) ?? ""
         self.forceReminderEnabled = defaults.object(forKey: Keys.forceReminderEnabled) as? Bool ?? false
         self.forcedReminderMinutes = defaults.object(forKey: Keys.forcedReminderMinutes) as? Int ?? 5
+        self.extractMeetingLinksEnabled = defaults.object(forKey: Keys.extractMeetingLinksEnabled) as? Bool ?? false
 
         // Try to restore an existing fingerprint. Migrate legacy deviceId-only
         // installs by preserving the id but pairing it with a fresh iPhone
@@ -180,5 +187,6 @@ final class AppSettings: ObservableObject {
         static let pinnedVersion = "eas.pinnedProtocolVersion"
         static let forceReminderEnabled = "calendar.forceReminderEnabled"
         static let forcedReminderMinutes = "calendar.forcedReminderMinutes"
+        static let extractMeetingLinksEnabled = "calendar.extractMeetingLinksEnabled"
     }
 }

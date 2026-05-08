@@ -186,6 +186,11 @@ struct SettingsView: View {
 
             Divider()
 
+            Text("Meeting links").font(.headline)
+            Toggle("Use meeting link from description when location is empty", isOn: $settings.extractMeetingLinksEnabled)
+
+            Divider()
+
             deviceFingerprintSection
 
             Divider()

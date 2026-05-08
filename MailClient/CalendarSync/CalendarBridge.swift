@@ -250,8 +250,10 @@ final class CalendarBridge {
     private func applyFields(_ item: EASCalendarItem, to event: EKEvent) {
         event.title = item.subject ?? "(no subject)"
         event.location = item.location
+        event.url = nil
         event.notes = item.body
         event.isAllDay = item.allDay
+        applyMeetingLink(from: item, to: event)
 
         if item.allDay {
             // EAS all-day events have UTC midnight start/end. EventKit prefers
@@ -276,6 +278,37 @@ final class CalendarBridge {
 
     private func reminderMinutes(for item: EASCalendarItem) -> Int? {
         settings.forceReminderEnabled ? settings.forcedReminderMinutes : item.reminderMinutes
+    }
+
+    private func applyMeetingLink(from item: EASCalendarItem, to event: EKEvent) {
+        guard settings.extractMeetingLinksEnabled else { return }
+        guard isBlank(event.location), event.url == nil else { return }
+        guard let url = Self.firstMeetingURL(in: item.body) else { return }
+
+        event.url = url
+        event.location = url.absoluteString
+    }
+
+    private static func firstMeetingURL(in text: String?) -> URL? {
+        guard let text, !text.isEmpty else { return nil }
+        let pattern = #"(?i)\b((?:https?://)?(?:[\w.-]+\.)?(?:zoom\.us|ktalk\.ru|telemost\.yandex\.ru|meet\.google\.com)/[^\s<>"')\]]+)"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return nil }
+        let range = NSRange(text.startIndex..<text.endIndex, in: text)
+        guard let match = regex.firstMatch(in: text, range: range),
+              let urlRange = Range(match.range(at: 1), in: text) else {
+            return nil
+        }
+        var value = String(text[urlRange])
+        value = value.trimmingCharacters(in: CharacterSet(charactersIn: ".,;:!?"))
+        let lowercased = value.lowercased()
+        if !lowercased.hasPrefix("http://"), !lowercased.hasPrefix("https://") {
+            value = "https://\(value)"
+        }
+        return URL(string: value)
+    }
+
+    private func isBlank(_ value: String?) -> Bool {
+        value?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true
     }
 
     private func applyAlarm(_ minutes: Int?, to event: EKEvent) {
