@@ -134,7 +134,7 @@ final class AppSettings: ObservableObject {
         self.pinnedProtocolVersion = defaults.string(forKey: Keys.pinnedVersion) ?? ""
         self.forceReminderEnabled = defaults.object(forKey: Keys.forceReminderEnabled) as? Bool ?? false
         self.forcedReminderMinutes = defaults.object(forKey: Keys.forcedReminderMinutes) as? Int ?? 5
-        self.extractMeetingLinksEnabled = defaults.object(forKey: Keys.extractMeetingLinksEnabled) as? Bool ?? false
+        self.extractMeetingLinksEnabled = defaults.object(forKey: Keys.extractMeetingLinksEnabled) as? Bool ?? true
 
         // Try to restore an existing fingerprint. Migrate legacy deviceId-only
         // installs by preserving the id but pairing it with a fresh iPhone
