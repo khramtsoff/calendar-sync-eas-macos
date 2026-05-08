@@ -176,6 +176,8 @@ final class AppSettings: ObservableObject {
     }
 
     private static func migrateLegacyDefaultsIfNeeded(to defaults: UserDefaults) {
+        let legacyBundleIdentifier = "com.mailclient.MailClient"
+        guard Bundle.main.bundleIdentifier != legacyBundleIdentifier else { return }
         guard let legacyDefaults = UserDefaults(suiteName: "com.mailclient.MailClient") else { return }
         for key in Keys.all {
             guard defaults.object(forKey: key) == nil,
