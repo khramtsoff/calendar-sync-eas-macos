@@ -39,3 +39,5 @@ fastlane/test_output/
 
 # Logs
 *.log
+
+*.xcodeproj
