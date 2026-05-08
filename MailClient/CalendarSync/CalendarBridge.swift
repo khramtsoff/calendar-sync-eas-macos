@@ -273,8 +273,9 @@ final class CalendarBridge {
     }
 
     private func applyAlarm(_ minutes: Int?, to event: EKEvent) {
+        guard let m = minutes else { return }
         event.alarms = []
-        guard let m = minutes, m > 0, m < 60 * 24 * 90 else { return }
+        guard m >= 0, m < 60 * 24 * 90 else { return }
         let alarm = EKAlarm(relativeOffset: TimeInterval(-m * 60))
         event.addAlarm(alarm)
     }
