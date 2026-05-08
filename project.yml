@@ -1,0 +1,56 @@
+name: MailClient
+options:
+  deploymentTarget:
+    macOS: "14.0"
+  bundleIdPrefix: com.mailclient
+  createIntermediateGroups: true
+  defaultConfig: Debug
+settings:
+  base:
+    SWIFT_VERSION: "5"
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_STYLE: Automatic
+    CODE_SIGN_IDENTITY: "-"
+    ENABLE_HARDENED_RUNTIME: YES
+    SWIFT_STRICT_CONCURRENCY: minimal
+targets:
+  MailClient:
+    type: application
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: MailClient
+        excludes:
+          - "Resources/Info.plist"
+          - "Resources/MailClient.entitlements"
+    resources:
+      - path: MailClient/Assets.xcassets
+        optional: true
+    info:
+      path: MailClient/Resources/Info.plist
+      properties:
+        CFBundleName: $(PRODUCT_NAME)
+        CFBundleDisplayName: MailClient
+        CFBundleIdentifier: $(PRODUCT_BUNDLE_IDENTIFIER)
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+        CFBundlePackageType: APPL
+        LSMinimumSystemVersion: $(MACOSX_DEPLOYMENT_TARGET)
+        LSUIElement: true
+        NSCalendarsUsageDescription: "MailClient mirrors Exchange ActiveSync calendar events into a dedicated local calendar so you can see meetings in the system Calendar app."
+        NSCalendarsFullAccessUsageDescription: "MailClient mirrors Exchange ActiveSync calendar events into a dedicated local calendar so you can see meetings in the system Calendar app."
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: false
+    entitlements:
+      path: MailClient/Resources/MailClient.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.network.client: true
+        com.apple.security.personal-information.calendars: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.mailclient.MailClient
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        GENERATE_INFOPLIST_FILE: NO
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
