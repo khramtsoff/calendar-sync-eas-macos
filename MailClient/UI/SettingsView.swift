@@ -170,6 +170,22 @@ struct SettingsView: View {
 
             Divider()
 
+            Text("Reminders").font(.headline)
+            Toggle("Remind about every synced event", isOn: $settings.forceReminderEnabled)
+            HStack {
+                Text("Alert")
+                Picker("", selection: $settings.forcedReminderMinutes) {
+                    Text("At event time").tag(0)
+                    Text("1 minute before").tag(1)
+                    Text("5 minutes before").tag(5)
+                }
+                .labelsHidden()
+                .frame(width: 180)
+                .disabled(!settings.forceReminderEnabled)
+            }
+
+            Divider()
+
             deviceFingerprintSection
 
             Divider()

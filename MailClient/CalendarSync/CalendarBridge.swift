@@ -27,10 +27,12 @@ final class CalendarBridge {
     let store: EKEventStore
     private let log = Logger(subsystem: "com.mailclient.MailClient", category: "CalendarBridge")
     private let stateStore: SyncStateStore
+    private let settings: AppSettings
 
-    init(stateStore: SyncStateStore = .shared) {
+    init(stateStore: SyncStateStore = .shared, settings: AppSettings = .shared) {
         self.store = EKEventStore()
         self.stateStore = stateStore
+        self.settings = settings
     }
 
     // MARK: - Authorization
@@ -267,9 +269,13 @@ final class CalendarBridge {
             event.endDate = s.addingTimeInterval(60 * 60)
         }
 
-        applyAlarm(item.reminderMinutes, to: event)
+        applyAlarm(reminderMinutes(for: item), to: event)
         applyAttendeesAsNotes(item, to: event)
         applyRecurrence(item.recurrence, to: event)
+    }
+
+    private func reminderMinutes(for item: EASCalendarItem) -> Int? {
+        settings.forceReminderEnabled ? settings.forcedReminderMinutes : item.reminderMinutes
     }
 
     private func applyAlarm(_ minutes: Int?, to event: EKEvent) {

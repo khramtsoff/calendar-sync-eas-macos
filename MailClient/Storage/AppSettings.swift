@@ -82,6 +82,17 @@ final class AppSettings: ObservableObject {
         didSet { defaults.set(pinnedProtocolVersion, forKey: Keys.pinnedVersion) }
     }
 
+    /// When enabled, local Calendar.app alarms are forced for every synced
+    /// event, regardless of the reminder value returned by Exchange.
+    @Published var forceReminderEnabled: Bool {
+        didSet { defaults.set(forceReminderEnabled, forKey: Keys.forceReminderEnabled) }
+    }
+
+    /// Minutes before event start. `0` means at start time.
+    @Published var forcedReminderMinutes: Int {
+        didSet { defaults.set(forcedReminderMinutes, forKey: Keys.forcedReminderMinutes) }
+    }
+
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         self.host = defaults.string(forKey: Keys.host) ?? ""
@@ -115,6 +126,8 @@ final class AppSettings: ObservableObject {
         self.syncIntervalSeconds = defaults.object(forKey: Keys.syncInterval) as? Int ?? 300
         self.autoSyncEnabled = defaults.object(forKey: Keys.autoSyncEnabled) as? Bool ?? true
         self.pinnedProtocolVersion = defaults.string(forKey: Keys.pinnedVersion) ?? ""
+        self.forceReminderEnabled = defaults.object(forKey: Keys.forceReminderEnabled) as? Bool ?? false
+        self.forcedReminderMinutes = defaults.object(forKey: Keys.forcedReminderMinutes) as? Int ?? 5
 
         // Try to restore an existing fingerprint. Migrate legacy deviceId-only
         // installs by preserving the id but pairing it with a fresh iPhone
@@ -165,5 +178,7 @@ final class AppSettings: ObservableObject {
         static let syncInterval = "eas.syncIntervalSeconds"
         static let autoSyncEnabled = "eas.autoSyncEnabled"
         static let pinnedVersion = "eas.pinnedProtocolVersion"
+        static let forceReminderEnabled = "calendar.forceReminderEnabled"
+        static let forcedReminderMinutes = "calendar.forcedReminderMinutes"
     }
 }
