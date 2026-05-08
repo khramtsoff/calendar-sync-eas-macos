@@ -47,12 +47,12 @@ struct SyncState: Codable, Equatable {
     }
 }
 
-/// Persists `SyncState` under `~/Library/Application Support/MailClient/sync-state.json`.
+/// Persists `SyncState` under `~/Library/Application Support/CalendarSync/sync-state.json`.
 final class SyncStateStore {
     static let shared = SyncStateStore()
 
-    private let log = Logger(subsystem: "com.mailclient.MailClient", category: "SyncStateStore")
-    private let queue = DispatchQueue(label: "com.mailclient.SyncStateStore", qos: .utility)
+    private let log = Logger(subsystem: "com.calendarsync.CalendarSync", category: "SyncStateStore")
+    private let queue = DispatchQueue(label: "com.calendarsync.SyncStateStore", qos: .utility)
     private let fileURL: URL
     private var cached: SyncState
 
@@ -68,9 +68,16 @@ final class SyncStateStore {
                                 in: .userDomainMask,
                                 appropriateFor: nil,
                                 create: true)) ?? URL(fileURLWithPath: NSTemporaryDirectory())
-        let dir = base.appendingPathComponent("MailClient", isDirectory: true)
+        let dir = base.appendingPathComponent("CalendarSync", isDirectory: true)
         try? fm.createDirectory(at: dir, withIntermediateDirectories: true)
-        return dir.appendingPathComponent("sync-state.json")
+        let url = dir.appendingPathComponent("sync-state.json")
+        let legacyURL = base
+            .appendingPathComponent("MailClient", isDirectory: true)
+            .appendingPathComponent("sync-state.json")
+        if !fm.fileExists(atPath: url.path), fm.fileExists(atPath: legacyURL.path) {
+            try? fm.copyItem(at: legacyURL, to: url)
+        }
+        return url
     }
 
     private static func load(from url: URL) -> SyncState {

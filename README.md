@@ -1,4 +1,4 @@
-# MailClient — EAS Calendar Bridge for macOS
+# CalendarSync — EAS Calendar Bridge for macOS
 
 Menu-bar app that talks to a custom Exchange ActiveSync (EAS) server and
 mirrors calendar events into a dedicated, app-controlled local calendar in
@@ -25,7 +25,7 @@ shadow into macOS Calendar via EventKit.
   1. Re-sync (clear SyncKey only)
   2. Wipe events (events + ServerId map)
   3. Delete calendar (full hard reset)
-- Credentials in Keychain, sync state in `~/Library/Application Support/MailClient/sync-state.json`.
+- Credentials in Keychain, sync state in `~/Library/Application Support/CalendarSync/sync-state.json`.
 
 ## Requirements
 
@@ -41,14 +41,14 @@ shadow into macOS Calendar via EventKit.
 
 ```sh
 xcodegen generate
-open MailClient.xcodeproj
+open CalendarSync.xcodeproj
 ```
 
 Or from the command line:
 
 ```sh
 xcodegen generate
-xcodebuild -project MailClient.xcodeproj -scheme MailClient -configuration Debug build
+xcodebuild -project CalendarSync.xcodeproj -scheme CalendarSync -configuration Debug build
 ```
 
 ## Run
@@ -65,8 +65,8 @@ xcodebuild -project MailClient.xcodeproj -scheme MailClient -configuration Debug
 ## Project layout
 
 ```
-MailClient/
-├── App/                MailClientApp.swift (MenuBarExtra + Settings scenes)
+CalendarSync/
+├── App/                CalendarSyncApp.swift (MenuBarExtra + Settings scenes)
 ├── UI/                 MenuBar / Settings views
 ├── Storage/            Keychain, AppSettings, SyncState
 ├── WBXML/              Pure-Swift codec
@@ -82,7 +82,7 @@ MailClient/
 logging:
 
 ```sh
-log stream --predicate 'subsystem == "com.mailclient.MailClient"'
+log stream --predicate 'subsystem == "com.calendarsync.CalendarSync"'
 ```
 
 ## Known limitations / not in MVP

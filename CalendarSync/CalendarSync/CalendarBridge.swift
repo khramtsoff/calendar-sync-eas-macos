@@ -25,7 +25,7 @@ final class CalendarBridge {
     static let dedicatedCalendarTitle = "Exchange (synced)"
 
     let store: EKEventStore
-    private let log = Logger(subsystem: "com.mailclient.MailClient", category: "CalendarBridge")
+    private let log = Logger(subsystem: "com.calendarsync.CalendarSync", category: "CalendarBridge")
     private let syncLog = SyncLog.shared
     private let stateStore: SyncStateStore
     private let settings: AppSettings

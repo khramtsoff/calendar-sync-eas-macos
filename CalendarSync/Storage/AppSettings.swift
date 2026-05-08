@@ -101,6 +101,7 @@ final class AppSettings: ObservableObject {
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
+        Self.migrateLegacyDefaultsIfNeeded(to: defaults)
         self.host = defaults.string(forKey: Keys.host) ?? ""
 
         // Migration: pre-split versions had a single `username` field used as
@@ -174,6 +175,17 @@ final class AppSettings: ObservableObject {
         }
     }
 
+    private static func migrateLegacyDefaultsIfNeeded(to defaults: UserDefaults) {
+        guard let legacyDefaults = UserDefaults(suiteName: "com.mailclient.MailClient") else { return }
+        for key in Keys.all {
+            guard defaults.object(forKey: key) == nil,
+                  let legacyValue = legacyDefaults.object(forKey: key) else {
+                continue
+            }
+            defaults.set(legacyValue, forKey: key)
+        }
+    }
+
     private enum Keys {
         static let host = "eas.host"
         static let email = "eas.email"
@@ -188,5 +200,21 @@ final class AppSettings: ObservableObject {
         static let forceReminderEnabled = "calendar.forceReminderEnabled"
         static let forcedReminderMinutes = "calendar.forcedReminderMinutes"
         static let extractMeetingLinksEnabled = "calendar.extractMeetingLinksEnabled"
+
+        static let all = [
+            host,
+            email,
+            domain,
+            authLogin,
+            legacyUsername,
+            legacyDeviceId,
+            fingerprint,
+            syncInterval,
+            autoSyncEnabled,
+            pinnedVersion,
+            forceReminderEnabled,
+            forcedReminderMinutes,
+            extractMeetingLinksEnabled
+        ]
     }
 }

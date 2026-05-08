@@ -9,7 +9,7 @@ struct MenuBarContentView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("MailClient EAS Bridge").font(.headline)
+                Text("CalendarSync EAS Bridge").font(.headline)
                 Spacer()
                 statusBadge
             }

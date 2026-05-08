@@ -21,8 +21,9 @@ enum KeychainError: Error, LocalizedError {
 /// the account is the EAS username so switching accounts doesn't leak credentials.
 struct Keychain {
     let service: String
+    private static let legacyService = "com.mailclient.MailClient"
 
-    init(service: String = Bundle.main.bundleIdentifier ?? "com.mailclient.MailClient") {
+    init(service: String = Bundle.main.bundleIdentifier ?? "com.calendarsync.CalendarSync") {
         self.service = service
     }
 
@@ -55,6 +56,18 @@ struct Keychain {
     }
 
     func password(account: String) throws -> String? {
+        if let value = try password(account: account, service: service) {
+            return value
+        }
+        guard service != Self.legacyService,
+              let legacyValue = try password(account: account, service: Self.legacyService) else {
+            return nil
+        }
+        try? setPassword(legacyValue, account: account)
+        return legacyValue
+    }
+
+    private func password(account: String, service: String) throws -> String? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
@@ -79,14 +92,16 @@ struct Keychain {
     }
 
     func deletePassword(account: String) throws {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: account
-        ]
-        let status = SecItemDelete(query as CFDictionary)
-        if status != errSecSuccess && status != errSecItemNotFound {
-            throw KeychainError.unexpectedStatus(status)
+        for candidateService in Set([service, Self.legacyService]) {
+            let query: [String: Any] = [
+                kSecClass as String: kSecClassGenericPassword,
+                kSecAttrService as String: candidateService,
+                kSecAttrAccount as String: account
+            ]
+            let status = SecItemDelete(query as CFDictionary)
+            if status != errSecSuccess && status != errSecItemNotFound {
+                throw KeychainError.unexpectedStatus(status)
+            }
         }
     }
 }

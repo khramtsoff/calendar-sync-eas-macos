@@ -4,7 +4,7 @@ import Combine
 
 /// In-memory ring buffer of recent sync events. Surfaces to the UI via
 /// `@Published`. Backed by `os.Logger` so the same lines also land in unified
-/// logging (`log stream --predicate 'subsystem == "com.mailclient.MailClient"'`).
+/// logging (`log stream --predicate 'subsystem == "com.calendarsync.CalendarSync"'`).
 @MainActor
 final class SyncLog: ObservableObject {
     nonisolated static let shared = SyncLog()
@@ -22,7 +22,7 @@ final class SyncLog: ObservableObject {
 
     @Published private(set) var entries: [Entry] = []
     private let capacity: Int
-    private let osLog = Logger(subsystem: "com.mailclient.MailClient", category: "SyncLog")
+    private let osLog = Logger(subsystem: "com.calendarsync.CalendarSync", category: "SyncLog")
 
     nonisolated init(capacity: Int = 500) {
         self.capacity = capacity

@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>MailClient</string>
+	<string>CalendarSync</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -30,8 +30,8 @@
 		<false/>
 	</dict>
 	<key>NSCalendarsFullAccessUsageDescription</key>
-	<string>MailClient mirrors Exchange ActiveSync calendar events into a dedicated local calendar so you can see meetings in the system Calendar app.</string>
+	<string>CalendarSync mirrors Exchange ActiveSync calendar events into a dedicated local calendar so you can see meetings in the system Calendar app.</string>
 	<key>NSCalendarsUsageDescription</key>
-	<string>MailClient mirrors Exchange ActiveSync calendar events into a dedicated local calendar so you can see meetings in the system Calendar app.</string>
+	<string>CalendarSync mirrors Exchange ActiveSync calendar events into a dedicated local calendar so you can see meetings in the system Calendar app.</string>
 </dict>
 </plist>

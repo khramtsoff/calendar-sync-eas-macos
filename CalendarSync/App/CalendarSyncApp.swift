@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct MailClientApp: App {
+struct CalendarSyncApp: App {
     @StateObject private var settings = AppSettings.shared
     @StateObject private var engine = SyncEngine.shared
     @StateObject private var log = SyncLog.shared
