@@ -42,7 +42,7 @@ struct EASRequestBuilder {
         req.setValue("application/vnd.ms-sync.wbxml", forHTTPHeaderField: "Content-Type")
         req.setValue("application/vnd.ms-sync.wbxml", forHTTPHeaderField: "Accept")
         req.setValue(protocolVersion, forHTTPHeaderField: "MS-ASProtocolVersion")
-        if let pk = policyKey, pk != "0", !pk.isEmpty {
+        if let pk = policyKey, !pk.isEmpty {
             req.setValue(pk, forHTTPHeaderField: "X-MS-PolicyKey")
         }
         req.setValue(userAgent, forHTTPHeaderField: "User-Agent")

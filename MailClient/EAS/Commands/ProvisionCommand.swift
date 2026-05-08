@@ -39,9 +39,12 @@ enum ProvisionCommand {
         WBXMLBuilder.el(.settings, "DeviceInformation", [
             WBXMLBuilder.el(.settings, "Set", [
                 WBXMLBuilder.leaf(.settings, "Model", fp.model),
+                WBXMLBuilder.leaf(.settings, "IMEI", fp.deviceId),
                 WBXMLBuilder.leaf(.settings, "FriendlyName", fp.friendlyName),
                 WBXMLBuilder.leaf(.settings, "OS", fp.os),
                 WBXMLBuilder.leaf(.settings, "OSLanguage", fp.osLanguage),
+                WBXMLBuilder.leaf(.settings, "PhoneNumber", ""),
+                WBXMLBuilder.leaf(.settings, "MobileOperator", ""),
                 WBXMLBuilder.leaf(.settings, "UserAgent", fp.userAgent)
             ])
         ])

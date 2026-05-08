@@ -135,7 +135,7 @@ struct EASClient {
         )
         let phase1 = try await sendCommand(name: "Provision",
                                            protocolVersion: protocolVersion,
-                                           policyKey: nil,
+                                           policyKey: "0",
                                            body: initialBody)
         let parsed1 = try ProvisionCommand.parse(phase1)
 
