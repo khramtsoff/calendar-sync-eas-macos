@@ -35,13 +35,13 @@ struct SettingsView: View {
 
             Form {
                 TextField("Host", text: $settings.host, prompt: Text("owa.domain.com"))
-                    .help("EAS endpoint hostname. The /Microsoft-Server-ActiveSync path is appended automatically.")
+                    .help(Text(verbatim: "EAS endpoint hostname. The /Microsoft-Server-ActiveSync path is appended automatically."))
                 TextField("Email", text: $settings.email, prompt: Text("user@domain.com"))
-                    .help("Mailbox identity. Sent as ?User= URL parameter. Usually an SMTP address.")
+                    .help(Text(verbatim: "Mailbox identity. Sent as ?User= URL parameter. Usually an SMTP address."))
                 TextField("Domain", text: $settings.domain, prompt: Text("london (optional)"))
-                    .help("AD short / NetBIOS domain name, exactly as iPhone Mail asks for it. Lowercase usually matches what the server expects. Leave empty if your server doesn't want a domain prefix.")
+                    .help(Text(verbatim: "AD short / NetBIOS domain name, exactly as iPhone Mail asks for it. Lowercase usually matches what the server expects. Leave empty if your server doesn't want a domain prefix."))
                 TextField("Username", text: $settings.authLogin, prompt: Text("USER_2"))
-                    .help("AD samAccountName. Combined with Domain as `domain\\username` for HTTP Basic auth, exactly like the iPhone.")
+                    .help(Text(verbatim: "AD samAccountName. Combined with Domain as domain\\username for HTTP Basic auth, exactly like the iPhone."))
                 SecureField("Password", text: $password, prompt: Text("Password"))
             }
             .textFieldStyle(.roundedBorder)
