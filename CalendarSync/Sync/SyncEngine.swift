@@ -138,6 +138,13 @@ final class SyncEngine: ObservableObject {
 
     func wipeAllEvents() async {
         do {
+            try await bridge.requestAccess()
+        } catch {
+            log.error("Wipe failed: Calendar access denied.")
+            return
+        }
+
+        do {
             try bridge.wipeAllEvents()
             log.info("Wiped all events from dedicated calendar.")
         } catch {
@@ -146,6 +153,13 @@ final class SyncEngine: ObservableObject {
     }
 
     func deleteCalendar() async {
+        do {
+            try await bridge.requestAccess()
+        } catch {
+            log.error("Delete calendar failed: Calendar access denied.")
+            return
+        }
+
         do {
             try bridge.deleteCalendar()
             log.info("Deleted dedicated calendar and full sync state.")
