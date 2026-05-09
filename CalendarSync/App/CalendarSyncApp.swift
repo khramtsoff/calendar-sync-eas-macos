@@ -23,7 +23,7 @@ struct CalendarSyncApp: App {
                 .environmentObject(settings)
                 .environmentObject(engine)
                 .environmentObject(log)
-                .frame(minWidth: 540, minHeight: 520)
+                .frame(minWidth: 680, minHeight: 720)
         }
     }
 

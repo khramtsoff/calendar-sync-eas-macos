@@ -71,7 +71,8 @@ final class CalendarBridge {
     func ensureLocalCalendar() throws -> EKCalendar {
         let snap = stateStore.snapshot()
         if let savedId = snap.dedicatedCalendarIdentifier,
-           let cal = store.calendar(withIdentifier: savedId) {
+           let cal = store.calendar(withIdentifier: savedId),
+           isLocalCalendar(cal) {
             return cal
         }
 
@@ -87,7 +88,7 @@ final class CalendarBridge {
         }
         let cal = EKCalendar(for: .event, eventStore: store)
         cal.title = Self.dedicatedCalendarTitle
-        cal.cgColor = NSColor.systemPurple.cgColor
+        cal.cgColor = NSColor.systemBlue.cgColor
         cal.source = local
         do {
             try store.saveCalendar(cal, commit: true)
@@ -100,19 +101,19 @@ final class CalendarBridge {
     }
 
     private func preferredLocalSource() -> EKSource? {
-        // Prefer .local source. Fall back to "iCloud" only if user has zero
-        // local sources (very rare on macOS).
-        if let local = store.sources.first(where: { $0.sourceType == .local }) {
-            return local
-        }
-        return store.sources.first(where: { $0.sourceType == .calDAV && $0.title == "iCloud" })
+        store.sources.first(where: { $0.sourceType == .local })
     }
 
     private func findDedicatedCalendar() -> EKCalendar? {
-        for cal in store.calendars(for: .event) where cal.title == Self.dedicatedCalendarTitle {
+        for cal in store.calendars(for: .event)
+            where cal.title == Self.dedicatedCalendarTitle && isLocalCalendar(cal) {
             return cal
         }
         return nil
+    }
+
+    private func isLocalCalendar(_ calendar: EKCalendar) -> Bool {
+        calendar.source.sourceType == .local
     }
 
     // MARK: - Reset / wipe
