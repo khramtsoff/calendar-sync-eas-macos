@@ -1,5 +1,20 @@
 import SwiftUI
 import AppKit
+import ServiceManagement
+
+private enum LaunchAtLogin {
+    static var isEnabled: Bool {
+        SMAppService.mainApp.status == .enabled
+    }
+
+    static func setEnabled(_ enabled: Bool) throws {
+        if enabled {
+            try SMAppService.mainApp.register()
+        } else {
+            try SMAppService.mainApp.unregister()
+        }
+    }
+}
 
 struct SettingsView: View {
     @EnvironmentObject var settings: AppSettings
@@ -13,6 +28,8 @@ struct SettingsView: View {
     @State private var saveStatus: String?
     @State private var dangerAction: DangerAction?
     @State private var showRegenerateConfirm = false
+    @State private var launchAtLoginEnabled = LaunchAtLogin.isEnabled
+    @State private var launchAtLoginMessage: String?
 
     private let keychain = Keychain()
 
@@ -94,6 +111,17 @@ struct SettingsView: View {
 
             Divider()
 
+            Text("Startup").font(.headline)
+            Toggle("Open CalendarSync at login", isOn: Binding(
+                get: { launchAtLoginEnabled },
+                set: setLaunchAtLogin
+            ))
+            if let message = launchAtLoginMessage {
+                Text(message).font(.caption).foregroundStyle(.secondary)
+            }
+
+            Divider()
+
             Text("Status").font(.headline)
             row("Status", engine.status.label)
             row("Protocol", engine.negotiatedVersion ?? "—")
@@ -108,6 +136,7 @@ struct SettingsView: View {
 
             Spacer()
         }
+        .onAppear { launchAtLoginEnabled = LaunchAtLogin.isEnabled }
     }
 
     // MARK: - Log
@@ -335,6 +364,17 @@ struct SettingsView: View {
             Task { await engine.deleteCalendar() }
         }
         dangerAction = nil
+    }
+
+    private func setLaunchAtLogin(_ enabled: Bool) {
+        do {
+            try LaunchAtLogin.setEnabled(enabled)
+            launchAtLoginEnabled = LaunchAtLogin.isEnabled
+            launchAtLoginMessage = enabled ? "Enabled in Login Items." : "Removed from Login Items."
+        } catch {
+            launchAtLoginEnabled = LaunchAtLogin.isEnabled
+            launchAtLoginMessage = "Login item error: \(error.localizedDescription)"
+        }
     }
 
     private func loadPasswordOnce() {
