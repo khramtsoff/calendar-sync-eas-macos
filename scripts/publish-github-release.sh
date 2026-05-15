@@ -8,6 +8,7 @@ APP_NAME="${APP_NAME:-CalendarSync}"
 TAG="${TAG:-v$VERSION}"
 ZIP_PATH="$ROOT_DIR/dist/$APP_NAME-$VERSION-macos.zip"
 SHA_PATH="$ZIP_PATH.sha256"
+export GH_PAGER="${GH_PAGER:-cat}"
 
 command -v gh >/dev/null 2>&1 || {
   echo "Required tool not found: gh" >&2
