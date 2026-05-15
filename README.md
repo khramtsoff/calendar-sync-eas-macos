@@ -62,11 +62,8 @@ xcodebuild -project CalendarSync.xcodeproj -scheme CalendarSync -configuration D
 
 ## Local release
 
-Release automation is local and driven by `make`. It signs with:
-
-```text
-Developer ID Application
-```
+Release automation is local and driven by `make`. It signs with the
+Developer ID Application certificate for team `JF25G9C7A8`.
 
 Prerequisites:
 

@@ -25,10 +25,10 @@ project:
 	xcodegen generate
 
 check-signing:
-	@if security find-identity -v -p codesigning | grep -F "Developer ID Application"; then \
+	@if security find-identity -v -p codesigning | grep -E "Developer ID Application: .* \\(JF25G9C7A8\\)"; then \
 		echo "Signing identity found."; \
 	else \
-		echo "Signing identity not found: Developer ID Application" >&2; \
+		echo "Signing identity not found: Developer ID Application certificate for team JF25G9C7A8" >&2; \
 		echo "Install the Developer ID Application certificate and private key in Keychain Access." >&2; \
 		exit 1; \
 	fi

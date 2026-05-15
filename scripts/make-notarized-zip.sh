@@ -10,7 +10,6 @@ SCHEME="${SCHEME:-CalendarSync}"
 PROJECT="${PROJECT:-CalendarSync.xcodeproj}"
 CONFIGURATION="${CONFIGURATION:-Release}"
 TEAM_ID="${TEAM_ID:-JF25G9C7A8}"
-SIGN_IDENTITY="${SIGN_IDENTITY:-Developer ID Application}"
 NOTARY_KEYCHAIN_PROFILE="${NOTARY_KEYCHAIN_PROFILE:-calendarsync-notary}"
 BUILD_NUMBER="${BUILD_NUMBER:-1}"
 BUILD_DIR="$ROOT_DIR/build"
@@ -34,9 +33,13 @@ require_tool ditto
 require_tool xcrun
 require_tool shasum
 
-if ! security find-identity -v -p codesigning | grep -Fq "$SIGN_IDENTITY"; then
-  echo "Signing identity not found in Keychain:" >&2
-  echo "  $SIGN_IDENTITY" >&2
+RESOLVED_SIGN_IDENTITY="$(security find-identity -v -p codesigning | awk -v team="($TEAM_ID)" '
+  index($0, "Developer ID Application:") && index($0, team) { print $2; exit }
+')"
+
+if [[ -z "$RESOLVED_SIGN_IDENTITY" ]]; then
+  echo "Signing identity not found in Keychain for team $TEAM_ID:" >&2
+  echo "  Developer ID Application" >&2
   echo "Import the Developer ID Application certificate for team $TEAM_ID, then rerun." >&2
   exit 3
 fi
@@ -58,7 +61,7 @@ xcodebuild archive \
   CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
   DEVELOPMENT_TEAM="$TEAM_ID" \
   CODE_SIGN_STYLE=Manual \
-  CODE_SIGN_IDENTITY="$SIGN_IDENTITY" \
+  CODE_SIGN_IDENTITY="$RESOLVED_SIGN_IDENTITY" \
   SKIP_INSTALL=NO
 
 echo "Verifying code signature..."
