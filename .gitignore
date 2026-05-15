@@ -9,6 +9,7 @@ Icon?
 DerivedData/
 build/
 Build/
+dist/
 *.xcworkspace/xcuserdata/
 *.xcodeproj/xcuserdata/
 *.xcuserstate
