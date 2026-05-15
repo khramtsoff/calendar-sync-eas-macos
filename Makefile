@@ -4,7 +4,7 @@ APP_NAME := CalendarSync
 VERSION ?=
 TAP_REPO ?= https://github.com/khramtsoff/homebrew-brew.git
 TAP_DIR ?= $(HOME)/Projects/homebrew-brew
-FORMULA_NAME ?= calendarsync
+FORMULA_NAME ?= calendar-sync
 NOTARY_KEYCHAIN_PROFILE ?= calendarsync-notary
 
 .PHONY: help project check-signing dist publish-github publish-homebrew release clean

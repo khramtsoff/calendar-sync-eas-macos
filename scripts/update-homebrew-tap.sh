@@ -6,7 +6,7 @@ VERSION="${1:?usage: scripts/update-homebrew-tap.sh VERSION}"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 APP_NAME="${APP_NAME:-CalendarSync}"
-FORMULA_NAME="${FORMULA_NAME:-calendarsync}"
+FORMULA_NAME="${FORMULA_NAME:-calendar-sync}"
 TAP_REPO="${TAP_REPO:-https://github.com/khramtsoff/homebrew-brew.git}"
 TAP_DIR="${TAP_DIR:-$HOME/Projects/homebrew-brew}"
 SOURCE_REPO="${SOURCE_REPO:-khramtsoff/eas-calendar-sync-macos}"
