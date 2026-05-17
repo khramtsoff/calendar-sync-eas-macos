@@ -49,65 +49,17 @@ shadow into macOS Calendar via EventKit.
 ## Build
 
 ```sh
+make build
+```
+
+Or generate the Xcode project:
+
+```sh
 xcodegen generate
 open CalendarSync.xcodeproj
 ```
 
-Or from the command line:
-
-```sh
-xcodegen generate
-xcodebuild -project CalendarSync.xcodeproj -scheme CalendarSync -configuration Debug build
-```
-
-## Local release
-
-Release automation is local and driven by `make`. It signs with the
-Developer ID Application certificate for team `JF25G9C7A8`.
-
-Prerequisites:
-
-1. Install the Developer ID Application certificate and private key in
-   Keychain Access.
-2. Install and authenticate GitHub CLI:
-   ```sh
-   gh auth login
-   ```
-3. Store Apple notarization credentials in Keychain using an app-specific
-   password:
-   ```sh
-   xcrun notarytool store-credentials calendarsync-notary \
-     --apple-id "APPLE_ID_EMAIL" \
-     --team-id JF25G9C7A8 \
-     --password "APP_SPECIFIC_PASSWORD"
-   ```
-
-   The release scripts use `calendarsync-notary` as the default notarytool
-   Keychain profile.
-
-Build, sign, notarize, staple, and zip:
-
-```sh
-make dist VERSION=1.0.0
-```
-
-Publish the GitHub Release and update the Homebrew tap:
-
-```sh
-make release VERSION=1.0.0
-```
-
-Useful individual targets:
-
-```sh
-make check-signing
-make publish-github VERSION=1.0.0
-make publish-homebrew VERSION=1.0.0
-```
-
-The Homebrew target writes a cask to
-`https://github.com/khramtsoff/homebrew-brew` (`khramtsoff/brew`) and uses
-the notarized zip from the GitHub Release.
+Developer and release workflow details live in [DEVELOPMENT.md](DEVELOPMENT.md).
 
 ## Run
 
